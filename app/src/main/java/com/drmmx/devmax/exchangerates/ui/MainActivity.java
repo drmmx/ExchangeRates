@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
         nbuDateTextView.setPaintFlags(nbuDateTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         nbuDateTextView.setText(exchangeRateDate);
 
-
         //Load data
         fetchAllData(exchangeRateDate);
     }
@@ -175,8 +174,8 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
 
     @Override
     protected void onStop() {
-        compositeDisposable.clear();
         super.onStop();
+        compositeDisposable.clear();
     }
 
     @Override

@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Курс валют</string>
+    <string name="pb_bank_title">ПриватБанк</string>
+    <string name="purchase_rate">Покупка</string>
+    <string name="sale_rate">Продажа</string>
+    <string name="currency">Валюта</string>
+    <string name="eur">EUR</string>
+    <string name="usd">USD</string>
+    <string name="rur">RUR</string>
+    <string name="nbu_bank_title">НБУ</string>
+</resources>

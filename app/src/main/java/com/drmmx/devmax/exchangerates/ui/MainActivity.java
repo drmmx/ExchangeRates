@@ -1,8 +1,11 @@
 package com.drmmx.devmax.exchangerates.ui;
 
+import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Paint;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,10 +15,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.DatePicker;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.drmmx.devmax.exchangerates.R;
 import com.drmmx.devmax.exchangerates.adapter.ExchangeRatesAdapter;
@@ -24,6 +26,8 @@ import com.drmmx.devmax.exchangerates.model.ExchangeRateData;
 import com.drmmx.devmax.exchangerates.retrofit.PbAPI;
 import com.drmmx.devmax.exchangerates.retrofit.RetrofitClient;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -32,13 +36,15 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import retrofit2.Retrofit;
 
-public class MainActivity extends AppCompatActivity {
+import static com.drmmx.devmax.exchangerates.util.Utils.getCurrentDate;
+import static com.drmmx.devmax.exchangerates.util.Utils.roundDouble;
+
+public class MainActivity extends AppCompatActivity implements DatePickerDialog.OnDateSetListener {
 
     private static final String TAG = "MainActivity";
 
     private TextView pbDateTextView, nbuDateTextView, eurPurchaseTextView, eurSaleTextView, usdPurchaseTextView,
-            usdSaleTextView, rurPurchaseTextView, rurSaleTextView;
-    private ImageView pbDateImageView, nbuDateImageView;
+            usdSaleTextView, rubPurchaseTextView, rubSaleTextView;
     private ConstraintLayout eurLayout, usdLayout, rurLayout;
     private ProgressBar progressBar;
 
@@ -47,8 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayoutManager linearLayoutManager;
     private ExchangeRatesAdapter adapter;
 
-    private String pbExchangeRateDate;
-    private String nbuExchangeRateDate;
+    private String exchangeRateDate;
 
     //RxJava
     CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -58,10 +63,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-/*        pbExchangeRateDate = getCurrentDate();
-        nbuExchangeRateDate = getCurrentDate();*/
-        pbExchangeRateDate = "15.12.2018";
-        nbuExchangeRateDate = "15.12.2018";
+        exchangeRateDate = getCurrentDate();
 
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.VISIBLE);
@@ -72,10 +74,8 @@ public class MainActivity extends AppCompatActivity {
         eurSaleTextView = findViewById(R.id.eurSaleTextView);
         usdPurchaseTextView = findViewById(R.id.usdPurchaseTextView);
         usdSaleTextView = findViewById(R.id.usdSaleTextView);
-        rurPurchaseTextView = findViewById(R.id.rurPurchaseTextView);
-        rurSaleTextView = findViewById(R.id.rurSaleTextView);
-        nbuDateImageView = findViewById(R.id.nbuDateImageView);
-        pbDateImageView = findViewById(R.id.pbDateImageView);
+        rubPurchaseTextView = findViewById(R.id.rubPurchaseTextView);
+        rubSaleTextView = findViewById(R.id.rubSaleTextView);
         eurLayout = findViewById(R.id.eurLayout);
         usdLayout = findViewById(R.id.usdLayout);
         rurLayout = findViewById(R.id.rurLayout);
@@ -91,24 +91,43 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(linearLayoutManager);
 
         pbDateTextView.setPaintFlags(pbDateTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-        pbDateTextView.setText(pbExchangeRateDate);
+        pbDateTextView.setText(exchangeRateDate);
         nbuDateTextView.setPaintFlags(nbuDateTextView.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-        nbuDateTextView.setText(nbuExchangeRateDate);
+        nbuDateTextView.setText(exchangeRateDate);
+
 
         //Load data
-        fetchNbuData(nbuExchangeRateDate);
+        fetchAllData(exchangeRateDate);
     }
 
-    private void fetchNbuData(String nbuExRateDate) {
-        compositeDisposable.add(pbAPI.getExchangeRate("", nbuExRateDate)
-                .subscribeOn(Schedulers.io())
+    private void fetchAllData(String exRateDate) {
+        compositeDisposable.add(pbAPI.getExchangeRate("", exRateDate)
+                .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<ExchangeRateData>() {
                     @Override
                     public void accept(ExchangeRateData exchangeRateData) {
-                        exchangeRateData.getExchangeRate().remove(0);
+                        List<ExchangeRate> exchangeRates = exchangeRateData.getExchangeRate();
+                        exchangeRates.remove(0);
+                        for (ExchangeRate exchangeRate : exchangeRates) {
+                            switch (exchangeRate.getCurrency()) {
+                                case "EUR":
+                                    eurPurchaseTextView.setText(roundDouble(exchangeRate.getPurchaseRate()));
+                                    eurSaleTextView.setText(roundDouble(exchangeRate.getSaleRate()));
+                                    break;
+                                case "USD":
+                                    usdPurchaseTextView.setText(roundDouble(exchangeRate.getPurchaseRate()));
+                                    usdSaleTextView.setText(roundDouble(exchangeRate.getSaleRate()));
+                                    break;
+                                case "RUB":
+                                    rubPurchaseTextView.setText(roundDouble(exchangeRate.getPurchaseRate()));
+                                    rubSaleTextView.setText(roundDouble(exchangeRate.getSaleRate()));
+                                    break;
+                            }
+                        }
                         adapter = new ExchangeRatesAdapter(MainActivity.this, exchangeRateData.getExchangeRate());
                         recyclerView.setAdapter(adapter);
+                        adapter.notifyDataSetChanged();
                         progressBar.setVisibility(View.GONE);
                     }
                 }, new Consumer<Throwable>() {
@@ -119,6 +138,18 @@ public class MainActivity extends AppCompatActivity {
                 }));
     }
 
+    @Override
+    public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month);
+        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat dayMonthFormat = new SimpleDateFormat("dd.MM.yyyy");
+        exchangeRateDate = dayMonthFormat.format(calendar.getTime());
+        pbDateTextView.setText(exchangeRateDate);
+        nbuDateTextView.setText(exchangeRateDate);
+        onResume();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -133,8 +164,25 @@ public class MainActivity extends AppCompatActivity {
             case R.id.graphItem:
                 startActivity(new Intent(this, GraphActivity.class));
                 return true;
+            case R.id.exchangeRateDate:
+                DialogFragment datePicker = new DatePickerFragment();
+                datePicker.show(getSupportFragmentManager(), "date picker");
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    protected void onStop() {
+        compositeDisposable.clear();
+        super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        progressBar.setVisibility(View.VISIBLE);
+        fetchAllData(exchangeRateDate);
     }
 }

@@ -3,8 +3,13 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/exchangeRateDate"
+        android:title="@string/menu_item_date"
+        android:icon="@drawable/ic_date_range"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/graphItem"
-        android:title="Колебания курса"
+        android:title="@string/menu_item_graph"
         android:icon="@drawable/ic_equalizer"
         app:showAsAction="ifRoom"/>
 </menu>

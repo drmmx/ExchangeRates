@@ -44,12 +44,17 @@ public class Utils {
         currencyName.put("UAH", "Украинская Гривна");
         currencyName.put("GEL", "Грузинский Лари");
         currencyName.put("PLZ", "Польский Злотый");
+        currencyName.put("LVL", "Латвийский Лат");
+        currencyName.put("LTL", "Литовский Лит");
+        currencyName.put("SKK", "Словацкая Крона");
+        currencyName.put("BYR", "Беларуский Рубль");
         return currencyName;
     }
 
     //Round double to 0.001
-    public static double roundDouble(double number) {
-        return Math.round(number * 1000.0) / 1000.0;
+    @SuppressLint("DefaultLocale")
+    public static String roundDouble(double number) {
+        return String.valueOf(String.format("%.3f", number));
     }
 
 }

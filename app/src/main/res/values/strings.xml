@@ -8,4 +8,6 @@
     <string name="usd">USD</string>
     <string name="rur">RUR</string>
     <string name="nbu_bank_title">НБУ</string>
+    <string name="menu_item_date">Дата</string>
+    <string name="menu_item_graph">Колебания курса</string>
 </resources>

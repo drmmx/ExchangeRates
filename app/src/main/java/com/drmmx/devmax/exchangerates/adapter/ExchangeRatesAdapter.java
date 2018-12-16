@@ -42,7 +42,7 @@ public class ExchangeRatesAdapter extends RecyclerView.Adapter<ExchangeRatesAdap
                 holder.itemView.setBackgroundColor(context.getResources().getColor(R.color.backgroundColor));
             }
             holder.currencyName.setText(getCurrencyName().get(exchangeRates.get(position).getCurrency()));
-            holder.uahValue.setText(new StringBuilder(String.valueOf(roundDouble(exchangeRates.get(position).getSaleRateNB()))).append("UAH"));
+            holder.uahValue.setText(new StringBuilder(roundDouble(exchangeRates.get(position).getSaleRateNB())).append("UAH"));
             holder.currencyValue.setText(new StringBuilder("1").append(String.valueOf(exchangeRates.get(position).getCurrency())));
         }
     }

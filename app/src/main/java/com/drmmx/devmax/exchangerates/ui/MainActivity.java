@@ -69,8 +69,7 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
         if (savedInstanceState != null) {
             exchangeRateDate = savedInstanceState.getString("exchangeRateDate");
         } else {
-            exchangeRateDate = "15.12.2018";
-//            exchangeRateDate = getCurrentDate();
+            exchangeRateDate = getCurrentDate();
         }
 
         progressBar = findViewById(R.id.progressBar);

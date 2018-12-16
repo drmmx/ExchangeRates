@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Paint;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -37,20 +38,21 @@ import io.reactivex.schedulers.Schedulers;
 import retrofit2.Retrofit;
 
 import static com.drmmx.devmax.exchangerates.util.Utils.getCurrentDate;
-import static com.drmmx.devmax.exchangerates.util.Utils.roundDouble;
+import static com.drmmx.devmax.exchangerates.util.Utils.*;
 
-public class MainActivity extends AppCompatActivity implements DatePickerDialog.OnDateSetListener {
+public class MainActivity extends AppCompatActivity implements DatePickerDialog.OnDateSetListener, View.OnClickListener {
 
     private static final String TAG = "MainActivity";
 
     private TextView pbDateTextView, nbuDateTextView, eurPurchaseTextView, eurSaleTextView, usdPurchaseTextView,
             usdSaleTextView, rubPurchaseTextView, rubSaleTextView;
-    private ConstraintLayout eurLayout, usdLayout, rurLayout;
+    private ConstraintLayout eurLayout, usdLayout, rubLayout;
     private ProgressBar progressBar;
+    private ProgressBar progressBar2;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private PbAPI pbAPI;
     private RecyclerView recyclerView;
-    private LinearLayoutManager linearLayoutManager;
     private ExchangeRatesAdapter adapter;
 
     private String exchangeRateDate;
@@ -63,10 +65,18 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        exchangeRateDate = getCurrentDate();
+
+        if (savedInstanceState != null) {
+            exchangeRateDate = savedInstanceState.getString("exchangeRateDate");
+        } else {
+            exchangeRateDate = "15.12.2018";
+//            exchangeRateDate = getCurrentDate();
+        }
 
         progressBar = findViewById(R.id.progressBar);
+        progressBar2 = findViewById(R.id.progressBar2);
         progressBar.setVisibility(View.VISIBLE);
+        progressBar2.setVisibility(View.VISIBLE);
 
         pbDateTextView = findViewById(R.id.pbDateTextView);
         nbuDateTextView = findViewById(R.id.nbuDateTextView);
@@ -78,7 +88,8 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
         rubSaleTextView = findViewById(R.id.rubSaleTextView);
         eurLayout = findViewById(R.id.eurLayout);
         usdLayout = findViewById(R.id.usdLayout);
-        rurLayout = findViewById(R.id.rurLayout);
+        rubLayout = findViewById(R.id.rubLayout);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         //Retrofit init
         Retrofit retrofit = RetrofitClient.getInstance();
@@ -86,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
 
         //RecyclerView init
         recyclerView = findViewById(R.id.recyclerView);
-        linearLayoutManager = new LinearLayoutManager(this);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(linearLayoutManager);
 
@@ -97,6 +108,18 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
 
         //Load data
         fetchAllData(exchangeRateDate);
+
+        eurLayout.setOnClickListener(this);
+        usdLayout.setOnClickListener(this);
+        rubLayout.setOnClickListener(this);
+
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                onResume();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
     }
 
     private void fetchAllData(String exRateDate) {
@@ -128,6 +151,7 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
                         recyclerView.setAdapter(adapter);
                         adapter.notifyDataSetChanged();
                         progressBar.setVisibility(View.GONE);
+                        progressBar2.setVisibility(View.GONE);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -135,6 +159,27 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
                         Log.d(TAG, "error: " + throwable.getMessage());
                     }
                 }));
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.eurLayout:
+                eurLayout.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+                usdLayout.setBackgroundColor(getResources().getColor(R.color.backgroundColor));
+                rubLayout.setBackgroundColor(getResources().getColor(R.color.backgroundColor));
+                break;
+            case R.id.usdLayout:
+                usdLayout.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+                eurLayout.setBackgroundColor(getResources().getColor(R.color.backgroundColor));
+                rubLayout.setBackgroundColor(getResources().getColor(R.color.backgroundColor));
+                break;
+            case R.id.rubLayout:
+                rubLayout.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+                usdLayout.setBackgroundColor(getResources().getColor(R.color.backgroundColor));
+                eurLayout.setBackgroundColor(getResources().getColor(R.color.backgroundColor));
+                break;
+        }
     }
 
     @Override
@@ -173,6 +218,12 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
     }
 
     @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putString("exchangeRateDate", exchangeRateDate);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         compositeDisposable.clear();
@@ -182,6 +233,7 @@ public class MainActivity extends AppCompatActivity implements DatePickerDialog.
     protected void onResume() {
         super.onResume();
         progressBar.setVisibility(View.VISIBLE);
+        progressBar2.setVisibility(View.VISIBLE);
         fetchAllData(exchangeRateDate);
     }
 }
